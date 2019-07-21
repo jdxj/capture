@@ -1,7 +1,6 @@
 package module
 
 import (
-	"io"
 	"log"
 	"net"
 	"sync"
@@ -35,26 +34,28 @@ func (cli *Client) DialAndPlay() {
 	go cli.playW(conn)
 
 	cli.wg.Wait()
+	conn.Close()
 }
 
 func (cli *Client)playR(conn net.Conn) {
+	defer cli.wg.Done()
+
 	buf := make([]byte, 1024)
 	for {
 		n, err := conn.Read(buf)
-		if err != nil && err != io.EOF {
+		if err != nil {
 			log.Println(err)
 			break
 		}
 
 		log.Printf("Client receive: %s\n",buf[:n])
 	}
-
-	cli.wg.Done()
 }
 
 func(cli *Client) playW(conn net.Conn) {
+	defer cli.wg.Done()
+
 	select {
 	case <-time.After(time.Hour):
-		cli.wg.Done()
 	}
 }

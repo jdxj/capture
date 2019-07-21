@@ -3,6 +3,7 @@ package module
 import (
 	"log"
 	"net"
+	"sync"
 )
 
 func NewServer(network, address string) *Server {
@@ -32,12 +33,24 @@ func (ser *Server) ListenAndHandle() {
 		}
 
 		log.Println("Accept a Client!")
-		go handleR(conn)
-		go handleW(conn)
+
+		wg := &sync.WaitGroup{}
+		wg.Add(2)
+
+		go handleClose(wg, conn)
+		go handleR(wg, conn)
+		go handleW(wg, conn)
 	}
 }
 
-func handleR(conn net.Conn) {
+func handleClose(wg *sync.WaitGroup, conn net.Conn) {
+	wg.Wait()
+	conn.Close()
+}
+
+func handleR(wg *sync.WaitGroup, conn net.Conn) {
+	defer wg.Done()
+
 	buf := make([]byte, 1024)
 	for {
 		n, err := conn.Read(buf)
@@ -50,7 +63,9 @@ func handleR(conn net.Conn) {
 	}
 }
 
-func handleW(conn net.Conn) {
+func handleW(wg *sync.WaitGroup, conn net.Conn) {
+	defer wg.Done()
+
 	_, err := conn.Write([]byte("Hello World!"))
 	if err != nil {
 		log.Println(err)
