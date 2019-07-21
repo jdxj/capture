@@ -56,6 +56,6 @@ func(cli *Client) playW(conn net.Conn) {
 	defer cli.wg.Done()
 
 	select {
-	case <-time.After(time.Hour):
+	case <-time.After(10*time.Second):
 	}
 }
